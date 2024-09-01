@@ -1,0 +1,24 @@
+{
+  "shippingInfo": {
+    "address": "ahgsd",
+    "city": "agfhjasg",
+    "state": "YGhjghgh",
+    "country": "India",
+    "pinCode": 86678
+  },
+  "subTotal": 5000,
+  "tax": 20,
+  "shippingCharges": 0,
+  "total": 5000,
+  "discount": 200,
+  "user": "jhdfsjds",
+  "orderItems": [
+    {
+      "name": "Moto Edge",
+      "photo": "uploads\\0ada4063-3f0d-4ac0-baae-4ca288d9ef70.jpg",
+      "price": 25000,
+      "quantity": 2,
+      "productId": "66cb4a8abe015fb8972c3c21"
+    }
+  ]
+}
