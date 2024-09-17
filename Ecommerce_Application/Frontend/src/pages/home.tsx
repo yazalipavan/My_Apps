@@ -1,11 +1,29 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import ProductCard from "../components/product-card";
+import useProductApi from "../services/useProductApi";
+import { Skeleton } from "../components/loader";
+import { CartItem, Product } from "../types/types";
+import toast from "react-hot-toast";
+import useCartStore from "../store/cartStore";
 
 const Home = () => {
-  const addToCartHandler = () => {
-    console.log("added to cart");
+  const { addToCart } = useCartStore();
+
+  const productApi = useProductApi();
+  useEffect(() => {
+    productApi.actions.readLatestProducts();
+  }, []);
+
+  const { data, isLoading, isError } = productApi.states.latestProducts;
+
+  const addToCartHandler = (cartItem: CartItem) => {
+    if (cartItem.stock < 1) return toast.error("Out of Stock");
+    addToCart(cartItem);
+    toast.success("Added to Cart");
   };
+
+  if (isError) return toast.error("Cannot fetch Products");
   return (
     <div className="home">
       <section></section>
@@ -16,14 +34,23 @@ const Home = () => {
         </Link>
       </h1>
       <main>
-        <ProductCard
-          productId="1"
-          name="Macbook"
-          price={345}
-          stock={45}
-          handler={addToCartHandler}
-          photo="https://th.bing.com/th?id=OSK.HEROeoAGeEOx58HAbfF3vrg8PefhUm7KHfKtXYkxcDcJRDg&w=472&h=280&c=1&rs=2&o=6&dpr=1.3&pid=SANGAM"
-        />
+        {isLoading ? (
+          <Skeleton width="80vw" />
+        ) : (
+          data?.products?.map((product: Product) => {
+            return (
+              <ProductCard
+                key={product._id}
+                productId={product._id}
+                name={product.name}
+                price={product.price}
+                stock={product.stock}
+                handler={addToCartHandler}
+                photo={product.photo}
+              />
+            );
+          })
+        )}
       </main>
     </div>
   );

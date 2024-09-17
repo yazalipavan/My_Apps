@@ -10,11 +10,11 @@ export const newProduct = TryCatch(async (req, res, next) => {
     if (!photo) {
         return next(new ErrorHandler("Please Add Photo", 400));
     }
-    if (!name || !price || !stock || !category) {
+    if (!name || !price || !stock || stock < 1 || !category) {
         rm(photo.path, () => {
             console.log("Deleted Successfully");
         });
-        return next(new ErrorHandler("Please enter all fields", 400));
+        return next(new ErrorHandler("Please enter all fields or Stock should be greather than 0", 400));
     }
     await Product.create({
         name,
@@ -76,7 +76,7 @@ export const getSingleProduct = TryCatch(async (req, res, next) => {
     const id = req.params.id;
     let product;
     if (myCache.has(`product-${id}`))
-        JSON.parse(myCache.get(`product-${id}`));
+        product = JSON.parse(myCache.get(`product-${id}`));
     else {
         product = await Product.findById(id);
         if (!product)
@@ -104,7 +104,7 @@ export const updateProduct = TryCatch(async (req, res, next) => {
         product.name = name;
     if (price)
         product.price = price;
-    if (stock)
+    if (stock && stock > 0)
         product.stock = stock;
     if (category)
         product.category = category;
@@ -114,7 +114,7 @@ export const updateProduct = TryCatch(async (req, res, next) => {
         productId: [String(product._id)],
         admin: true,
     });
-    return res.status(200).json({
+    return res.status(201).json({
         success: true,
         message: "Product Updated Successfully",
     });
@@ -132,7 +132,7 @@ export const deleteProduct = TryCatch(async (req, res, next) => {
         productId: [String(product._id)],
         admin: true,
     });
-    return res.status(200).json({
+    return res.status(201).json({
         success: true,
         message: "Product Deleted Successfully",
     });

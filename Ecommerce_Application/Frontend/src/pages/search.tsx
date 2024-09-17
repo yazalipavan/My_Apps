@@ -1,13 +1,26 @@
 import React, { useEffect, useState } from "react";
 import ProductCard from "../components/product-card";
+import useProductApi from "../services/useProductApi";
+import { Skeleton } from "../components/loader";
+import toast from "react-hot-toast";
+import { CartItem } from "../types/types";
+import useCartStore from "../store/cartStore";
 
 const Search = () => {
+  const productApi = useProductApi();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("");
   const [maxPrice, setMaxPrice] = useState(1000000);
   const [category, setCategory] = useState("");
   const [page, setPage] = useState(1);
-  const addToCartHandler = () => {};
+
+  const { addToCart } = useCartStore();
+
+  const addToCartHandler = (cartItem: CartItem) => {
+    if (cartItem.stock < 1) return toast.error("Out of Stock");
+    addToCart(cartItem);
+    toast.success("Added to Cart");
+  };
   const [isPrevPage, setIsPrevPage] = useState(true);
   const [isNextPage, setIsNextPage] = useState(true);
   useEffect(() => {
@@ -20,6 +33,41 @@ const Search = () => {
       setIsNextPage(true);
     }
   }, [page]);
+
+  useEffect(() => {
+    productApi.actions.readAllCategories();
+  }, []);
+
+  useEffect(() => {
+    const filter = {
+      ...(search && { search }),
+      ...(sort && { sort }),
+      ...(category && category && { category }),
+      ...(maxPrice && { price: maxPrice.toString() }),
+      page: page.toString(),
+    };
+    productApi.actions.readAllProducts(filter);
+  }, [search, page, category, maxPrice, sort]);
+
+  const {
+    data: searchData,
+    isLoading: productLoading,
+    isError: productError,
+  } = productApi.states.allProducts;
+
+  const {
+    data: categoryData,
+    isLoading: categoryLoading,
+    isError: categoryError,
+  } = productApi.states.allCategories;
+
+  if (productError) {
+    toast.error("Error fetching products");
+  }
+  if (categoryError) {
+    toast.error("Error fetching categories");
+  }
+
   return (
     <div className="product-search-page">
       <aside>
@@ -55,9 +103,11 @@ const Search = () => {
               setCategory(e.target.value);
             }}
           >
-            <option value="">All</option>
-            <option value="game">Game</option>
-            <option value="laptop">Laptop</option>
+            <option value="">ALL</option>
+            {!categoryLoading &&
+              categoryData?.categories.map((category: string) => (
+                <option value={category}>{category.toUpperCase()}</option>
+              ))}
           </select>
         </div>
       </aside>
@@ -69,31 +119,42 @@ const Search = () => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="search-product-list">
-          <ProductCard
-            productId="1"
-            name="Macbook"
-            price={345}
-            stock={45}
-            handler={addToCartHandler}
-            photo="https://th.bing.com/th?id=OSK.HEROeoAGeEOx58HAbfF3vrg8PefhUm7KHfKtXYkxcDcJRDg&w=472&h=280&c=1&rs=2&o=6&dpr=1.3&pid=SANGAM"
-          />
-        </div>
-        <article>
-          <button
-            disabled={!isPrevPage}
-            onClick={() => setPage((prev) => prev - 1)}
-          >
-            Prev
-          </button>
-          <span>{page} of 4</span>
-          <button
-            disabled={!isNextPage}
-            onClick={() => setPage((prev) => prev + 1)}
-          >
-            Next
-          </button>
-        </article>
+        {productLoading ? (
+          <Skeleton length={10} />
+        ) : (
+          <div className="search-product-list">
+            {searchData?.products?.map((product: any) => (
+              <ProductCard
+                key={product._id}
+                productId={product._id}
+                name={product.name}
+                price={product.price}
+                stock={product.stock}
+                handler={addToCartHandler}
+                photo={product.photo}
+              />
+            ))}
+          </div>
+        )}
+        {searchData && searchData.totalPages >= 1 && (
+          <article>
+            <button
+              disabled={!isPrevPage}
+              onClick={() => setPage((prev) => prev - 1)}
+            >
+              Prev
+            </button>
+            <span>
+              {page} of {searchData.totalPages}
+            </span>
+            <button
+              disabled={!isNextPage}
+              onClick={() => setPage((prev) => prev + 1)}
+            >
+              Next
+            </button>
+          </article>
+        )}
       </main>
     </div>
   );

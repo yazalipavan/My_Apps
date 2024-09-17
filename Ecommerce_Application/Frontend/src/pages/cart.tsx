@@ -1,34 +1,78 @@
 import React, { useEffect, useState } from "react";
 import { VscError } from "react-icons/vsc";
-import CartItem from "../components/cart-item";
 import { Link } from "react-router-dom";
-
-const cartItems = [
-  {
-    productId: "sdghd",
-    photo:
-      "https://th.bing.com/th?id=OSK.HEROeoAGeEOx58HAbfF3vrg8PefhUm7KHfKtXYkxcDcJRDg&w=472&h=280&c=1&rs=2&o=6&dpr=1.3&pid=SANGAM",
-    name: "MacBook",
-    price: 3000,
-    quantity: 4,
-    stock: 50,
-  },
-];
-const subtotal = 4000;
-const tax = Math.round(subtotal * 0.18);
-const shippingCharges = 200;
-const discount = 0;
-const total = subtotal + tax + shippingCharges - discount;
+import useCartStore from "../store/cartStore";
+import CartItemComponent from "../components/cart-item";
+import { CartItem } from "../types/types";
+import useOrderApi from "../services/useOrderApi";
 
 const Cart = () => {
+  const {
+    cartItems,
+    addToCart,
+    removeCartItem,
+    subtotal,
+    tax,
+    total,
+    shippingCharges,
+    discount,
+    calculatePrice,
+    applyDiscount,
+  } = useCartStore();
+
+  const orderApi = useOrderApi();
+  const couponData = orderApi.states.couponDiscount;
+
   const [couponCode, setCouponCode] = useState<string>("");
   const [isValidCouponCode, setIsValidCouponCode] = useState<boolean>(false);
-  useEffect(() => {}, [couponCode]);
+
+  useEffect(() => {
+    if (couponData?.data?.success) {
+      console.log(couponData?.data?.discount);
+      applyDiscount(couponData?.data?.discount);
+      setIsValidCouponCode(true);
+    } else {
+      applyDiscount(0);
+      setIsValidCouponCode(false);
+    }
+  }, [couponData.data]);
+
+  useEffect(() => {
+    if (couponCode) orderApi.actions.readCouponDiscount(couponCode);
+  }, [couponCode]);
+
+  const incrementHandler = (cartItem: CartItem) => {
+    if (cartItem.quantity < cartItem.stock)
+      addToCart({ ...cartItem, quantity: cartItem.quantity + 1 });
+  };
+
+  const decrementHandler = (cartItem: CartItem) => {
+    if (cartItem.quantity > 1) {
+      addToCart({ ...cartItem, quantity: cartItem.quantity - 1 });
+    }
+  };
+
+  const removeHandler = (id: string) => {
+    removeCartItem(id);
+  };
+
+  useEffect(() => {
+    calculatePrice();
+  }, [cartItems, discount]);
+
   return (
     <div className="cart">
       <main>
         {cartItems.length > 0 ? (
-          cartItems.map((i, idx) => <CartItem key={idx} cartItem={i} />)
+          cartItems.map((i, idx) => (
+            <CartItemComponent
+              key={idx}
+              cartItem={i}
+              incrementHandler={incrementHandler}
+              decrementHandler={decrementHandler}
+              removeHandler={removeHandler}
+            />
+          ))
         ) : (
           <h1>No Products Added</h1>
         )}
@@ -52,9 +96,11 @@ const Cart = () => {
             ${discount} off using the <code>{couponCode}</code>
           </span>
         ) : (
-          <span className="red">
-            Invalid Coupon <VscError />
-          </span>
+          couponCode && (
+            <span className="red">
+              Invalid Coupon <VscError />
+            </span>
+          )
         )}
         {cartItems.length > 0 && <Link to="/shipping">Checkout</Link>}
       </aside>

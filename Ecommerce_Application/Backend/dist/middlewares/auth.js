@@ -4,6 +4,7 @@ import { User } from "../models/user.js";
 // Middleware to make sure only admin is allowed
 export const adminOnly = TryCatch(async (req, res, next) => {
     const { id } = req.query;
+    console.log(id);
     if (!id) {
         return next(new ErrorHandler("Login to proceed", 401));
     }

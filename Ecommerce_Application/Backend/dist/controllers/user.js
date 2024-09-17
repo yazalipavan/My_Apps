@@ -10,7 +10,8 @@ export const newUser = TryCatch(async (req, res, next) => {
             message: `Welcome , ${user.name}`,
         });
     }
-    if (!_id || !name || !email || !photo || !gender) {
+    console.log(req.body);
+    if (!_id || !name || !email || !photo || !gender || !dob) {
         return next(new ErrorHandler("Provide all fields", 400));
     }
     user = await User.create({

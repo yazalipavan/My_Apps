@@ -14,7 +14,7 @@ app.post("/create", createPaymentIntent);
 
 app.post("/coupon/new", adminOnly, newCoupon);
 
-app.get("/disocunt", applyDiscount);
+app.get("/discount", applyDiscount);
 
 app.get("/coupon/all", adminOnly, allCoupons);
 

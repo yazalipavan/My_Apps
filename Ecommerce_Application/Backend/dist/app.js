@@ -4,6 +4,7 @@ import { errorMiddleware } from "./middlewares/error.js";
 import NodeCache from "node-cache";
 import { config } from "dotenv";
 import morgan from "morgan";
+import cors from "cors";
 // Importing Routes
 import userRoute from "./routes/user.js";
 import productRoute from "./routes/products.js";
@@ -21,6 +22,7 @@ connectDB(mongoUri);
 export const stripe = new Stripe(stripeKey);
 export const myCache = new NodeCache();
 const app = express();
+app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
 app.get("/", (req, res) => {

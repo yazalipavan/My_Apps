@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { ErrorInfo, useState } from "react";
 import {
   FaSearch,
   FaShoppingBag,
@@ -7,12 +7,25 @@ import {
   FaUser,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { User } from "../types/types";
+import { signOut } from "firebase/auth";
+import { auth } from "../firebase";
+import toast from "react-hot-toast";
 
-const Header = () => {
-  const user = { _id: "dfg", role: "admin" };
+interface HeaderProps {
+  user: User | null;
+}
+
+const Header = ({ user }: HeaderProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const logoutHandler = () => {
-    setIsOpen(false);
+  const logoutHandler = async () => {
+    try {
+      await signOut(auth);
+      toast.success("Sign out successfully");
+      setIsOpen(false);
+    } catch (error) {
+      toast.error("Sign out failed");
+    }
   };
 
   return (
@@ -33,7 +46,7 @@ const Header = () => {
           </button>
           <dialog open={isOpen}>
             <div>
-              {user.role === "admin" && (
+              {user?.role === "admin" && (
                 <Link onClick={() => setIsOpen(false)} to="/admin/dashboard">
                   Admin
                 </Link>
@@ -49,9 +62,9 @@ const Header = () => {
         </>
       ) : (
         <>
-          <button>
+          <Link to="/login">
             <FaSignInAlt />
-          </button>
+          </Link>
         </>
       )}
     </nav>

@@ -1,8 +1,12 @@
-import React, { ChangeEvent, useState } from "react";
+import React, { ChangeEvent, useState, FormEvent } from "react";
 import { BiArrowBack } from "react-icons/bi";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
+import useCartStore from "../store/cartStore";
+import toast from "react-hot-toast";
 
 const Shipping = () => {
+  const { cartItems, total, saveShippingInfo } = useCartStore();
+
   const navigate = useNavigate();
   const [shippingInfo, setShippingInfo] = useState({
     address: "",
@@ -19,12 +23,42 @@ const Shipping = () => {
       [e.target.name]: e.target.value,
     }));
   };
+
+  const submitHandler = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    saveShippingInfo(shippingInfo);
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER}/api/v1/payment/create`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ amount: total }),
+        }
+      );
+      const data = await response.json();
+
+      navigate("/pay", {
+        state: data.clientSecret,
+      });
+    } catch (error) {
+      console.log(error);
+      toast.error("Something went Wrong");
+    }
+  };
+
+  if (cartItems.length <= 0) return <Navigate to={"/cart"} />;
+
   return (
     <div className="shipping">
       <button className="back-btn" onClick={() => navigate("/cart")}>
         <BiArrowBack />
       </button>
-      <form>
+      <form onSubmit={submitHandler}>
         <h1>Shipping Address</h1>
         <input
           required

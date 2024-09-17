@@ -13,7 +13,7 @@ const app = express();
 
 app.post("/new", newOrder);
 
-app.get("/myOrder", myOrders);
+app.get("/my", myOrders);
 
 app.get("/all", adminOnly, allOrders);
 

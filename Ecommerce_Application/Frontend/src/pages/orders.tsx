@@ -1,7 +1,12 @@
-import React, { ReactElement, useState } from "react";
+import React, { ReactElement, useEffect, useState } from "react";
 import TableHOC from "../components/admin/TableHOC";
 import { Column } from "react-table";
 import { Link } from "react-router-dom";
+import useUserStore from "../store/userStore";
+import useOrderApi from "../services/useOrderApi";
+import toast from "react-hot-toast";
+import { Order } from "../types/types";
+import { Skeleton } from "../components/loader";
 
 type DataType = {
   _id: string;
@@ -22,6 +27,10 @@ const column: Column<DataType>[] = [
     accessor: "quantity",
   },
   {
+    Header: "Amount",
+    accessor: "amount",
+  },
+  {
     Header: "Discount",
     accessor: "discount",
   },
@@ -36,16 +45,46 @@ const column: Column<DataType>[] = [
 ];
 
 const Orders = () => {
-  const [rows, setRows] = useState<DataType[]>([
-    {
-      _id: "agfd",
-      amount: 4654,
-      quantity: 546,
-      discount: 45,
-      status: <span className="red">Processing</span>,
-      action: <Link to="/order/agfd">View</Link>,
-    },
-  ]);
+  const { userStoreData } = useUserStore();
+  const orderApi = useOrderApi();
+
+  useEffect(() => {
+    orderApi.actions.myOrder(userStoreData?._id);
+  }, []);
+
+  const { data, isLoading, isError, error, isSuccess } =
+    orderApi.states.myOrders;
+
+  const [rows, setRows] = useState<DataType[]>([]);
+
+  if (isError) toast.error(error.message);
+
+  useEffect(() => {
+    if (isSuccess && data) {
+      const orders = data?.orders?.map((order: Order) => ({
+        _id: order?._id,
+        amount: order?.total,
+        discount: order?.discount,
+        quantity: order?.orderItems.length,
+        status: (
+          <span
+            className={
+              order?.status === "Processing"
+                ? "red"
+                : order?.status === "Shipped"
+                ? "green"
+                : "purple"
+            }
+          >
+            {order?.status}
+          </span>
+        ),
+        action: <Link to={`/admin/transaction/${order._id}`}>Manage</Link>,
+      }));
+      setRows(orders || []);
+    }
+  }, [data]);
+
   const Table = TableHOC<DataType>(
     column,
     rows,
@@ -56,7 +95,7 @@ const Orders = () => {
   return (
     <div className="container">
       <h1>My Orders</h1>
-      {Table}
+      {isLoading ? <Skeleton length={20} /> : Table}
     </div>
   );
 };

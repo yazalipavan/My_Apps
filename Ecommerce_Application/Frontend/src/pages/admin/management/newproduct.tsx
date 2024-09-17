@@ -1,5 +1,9 @@
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useState } from "react";
 import AdminSidebar from "../../../components/admin/AdminSidebar";
+import useProductApi from "../../../services/useProductApi";
+import useUserStore from "../../../store/userStore";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const NewProduct = () => {
   const [name, setName] = useState<string>("");
@@ -8,6 +12,10 @@ const NewProduct = () => {
   const [stock, setStock] = useState<number>(1);
   const [photoPrev, setPhotoPrev] = useState<string>("");
   const [photo, setPhoto] = useState<File>();
+
+  const navigate = useNavigate();
+  const productApi = useProductApi();
+  const { userStoreData } = useUserStore();
 
   const changeImageHandler = (e: ChangeEvent<HTMLInputElement>) => {
     const file: File | undefined = e.target.files?.[0];
@@ -25,16 +33,42 @@ const NewProduct = () => {
     }
   };
 
+  const submitHandler = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!name || !price || !stock || !photo || !category) return;
+    const formData = new FormData();
+    formData.set("name", name);
+    formData.set("price", price.toString());
+    formData.set("stock", stock.toString());
+    formData.set("photo", photo);
+    formData.set("category", category);
+
+    productApi.actions.createProduct({ id: userStoreData?._id }, formData, {
+      onSuccess: (response: Record<string, string>) => {
+        if (response.success) {
+          toast.success(response.message);
+          navigate("/admin/product");
+        } else {
+          toast.error(response.message);
+        }
+      },
+      onError: (response: Record<string, string>) => {
+        toast.error(response.message);
+      },
+    });
+  };
+
   return (
     <div className="admin-container">
       <AdminSidebar />
       <main className="product-management">
         <article>
-          <form>
+          <form onSubmit={submitHandler}>
             <h2>New Product</h2>
             <div>
               <label>Name</label>
               <input
+                required
                 type="text"
                 placeholder="Name"
                 value={name}
@@ -44,6 +78,7 @@ const NewProduct = () => {
             <div>
               <label>Price</label>
               <input
+                required
                 type="number"
                 placeholder="Price"
                 value={price}
@@ -53,6 +88,7 @@ const NewProduct = () => {
             <div>
               <label>Stock</label>
               <input
+                required
                 type="number"
                 placeholder="Stock"
                 value={stock}
@@ -63,6 +99,7 @@ const NewProduct = () => {
             <div>
               <label>Category</label>
               <input
+                required
                 type="text"
                 placeholder="eg. laptop, camera etc"
                 value={category}
@@ -72,7 +109,7 @@ const NewProduct = () => {
 
             <div>
               <label>Photo</label>
-              <input type="file" onChange={changeImageHandler} />
+              <input required type="file" onChange={changeImageHandler} />
             </div>
 
             {photoPrev && <img src={photoPrev} alt="New Image" />}

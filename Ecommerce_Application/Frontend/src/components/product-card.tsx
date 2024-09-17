@@ -1,5 +1,6 @@
 import React from "react";
 import { FaPlus } from "react-icons/fa";
+import { CartItem } from "../types/types";
 
 type ProductProps = {
   productId: string;
@@ -7,9 +8,9 @@ type ProductProps = {
   photo: string;
   price: number;
   stock: number;
-  handler: () => void;
+  handler: (cartItem: CartItem) => string | undefined;
 };
-const server = "ahdfbmdf";
+
 const ProductCard = ({
   productId,
   name,
@@ -20,11 +21,22 @@ const ProductCard = ({
 }: ProductProps) => {
   return (
     <div className="product-card">
-      <img src={`${photo}`} />
+      <img src={`${import.meta.env.VITE_SERVER}/${photo}`} />
       <p>{name}</p>
       <span>${price}</span>
       <div>
-        <button onClick={() => handler()}>
+        <button
+          onClick={() =>
+            handler({
+              productId,
+              name,
+              photo,
+              price,
+              stock,
+              quantity: 1,
+            })
+          }
+        >
           <FaPlus />
         </button>
       </div>

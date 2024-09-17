@@ -13,13 +13,13 @@ export const newUser = TryCatch(
     const { name, email, photo, gender, dob, _id } = req.body;
     let user = await User.findById(_id);
     if (user) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         success: true,
         message: `Welcome , ${user.name}`,
       });
     }
-
-    if (!_id || !name || !email || !photo || !gender) {
+    console.log(req.body);
+    if (!_id || !name || !email || !photo || !gender || !dob) {
       return next(new ErrorHandler("Provide all fields", 400));
     }
     user = await User.create({

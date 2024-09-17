@@ -120,6 +120,6 @@ export const deleteOrder = TryCatch(async (req, res, next) => {
     });
     return res.status(201).json({
         success: true,
-        message: "Order Processed Successfully",
+        message: "Order Deleted Successfully",
     });
 });

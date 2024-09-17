@@ -7,6 +7,7 @@ import { User } from "../models/user.js";
 export const adminOnly = TryCatch(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.query;
+    console.log(id);
     if (!id) {
       return next(new ErrorHandler("Login to proceed", 401));
     }

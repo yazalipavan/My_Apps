@@ -3,7 +3,7 @@ import { allOrders, deleteOrder, getSingleOrder, myOrders, newOrder, processOrde
 import { adminOnly } from "../middlewares/auth.js";
 const app = express();
 app.post("/new", newOrder);
-app.get("/myOrder", myOrders);
+app.get("/my", myOrders);
 app.get("/all", adminOnly, allOrders);
 app
     .route("/:id")

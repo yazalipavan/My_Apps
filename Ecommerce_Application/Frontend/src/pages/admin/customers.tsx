@@ -1,8 +1,13 @@
-import { ReactElement, useState } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import { FaTrash } from "react-icons/fa";
 import { Column } from "react-table";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import TableHOC from "../../components/admin/TableHOC";
+import useUserStore from "../../store/userStore";
+import useUserApi from "../../services/useUserApi";
+import toast from "react-hot-toast";
+import { Skeleton } from "../../components/loader";
+import { User } from "../../types/types";
 
 interface DataType {
   avatar: ReactElement;
@@ -40,55 +45,61 @@ const columns: Column<DataType>[] = [
   },
 ];
 
-const img = "https://randomuser.me/api/portraits/women/54.jpg";
-const img2 = "https://randomuser.me/api/portraits/women/50.jpg";
-
-const arr: Array<DataType> = [
-  {
-    avatar: (
-      <img
-        style={{
-          borderRadius: "50%",
-        }}
-        src={img}
-        alt="Shoes"
-      />
-    ),
-    name: "Emily Palmer",
-    email: "emily.palmer@example.com",
-    gender: "female",
-    role: "user",
-    action: (
-      <button>
-        <FaTrash />
-      </button>
-    ),
-  },
-
-  {
-    avatar: (
-      <img
-        style={{
-          borderRadius: "50%",
-        }}
-        src={img2}
-        alt="Shoes"
-      />
-    ),
-    name: "May Scoot",
-    email: "aunt.may@example.com",
-    gender: "female",
-    role: "user",
-    action: (
-      <button>
-        <FaTrash />
-      </button>
-    ),
-  },
-];
-
 const Customers = () => {
-  const [rows, setRows] = useState<DataType[]>(arr);
+  const { userStoreData } = useUserStore();
+  const userApi = useUserApi();
+
+  useEffect(() => {
+    userApi.actions.readAllUsers(userStoreData?._id || "");
+  }, []);
+  const { data, isLoading, isError, error, isSuccess } =
+    userApi.states.allUsers;
+
+  const handleDelete = (id: string) => {
+    userApi.actions.deleteUser(id, userStoreData?._id || "", {
+      onSuccess: (response: Record<string, string>) => {
+        if (response.success) {
+          toast.success(response.message);
+          userApi.actions.readAllUsers(userStoreData?._id || "");
+        } else {
+          toast.error(response.message);
+        }
+      },
+      onError: (response: Record<string, string>) => {
+        toast.error(response.message);
+      },
+    });
+  };
+
+  const [rows, setRows] = useState<DataType[]>([]);
+
+  if (isError) toast.error(error.message);
+
+  useEffect(() => {
+    if (isSuccess && data) {
+      const users = data?.users?.map((user: User) => ({
+        avatar: (
+          <img
+            style={{
+              borderRadius: "50%",
+            }}
+            src={user.photo}
+            alt={user.name}
+          />
+        ),
+        name: user.name,
+        email: user.email,
+        gender: user.gender,
+        role: user.role,
+        action: (
+          <button onClick={() => handleDelete(user._id)}>
+            <FaTrash />
+          </button>
+        ),
+      }));
+      setRows(users || []);
+    }
+  }, [data]);
 
   const Table = TableHOC<DataType>(
     columns,
@@ -101,7 +112,7 @@ const Customers = () => {
   return (
     <div className="admin-container">
       <AdminSidebar />
-      <main>{Table}</main>
+      <main>{isLoading ? <Skeleton length={20} /> : Table}</main>
     </div>
   );
 };
